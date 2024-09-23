@@ -26,36 +26,48 @@ class _GroceryListState extends State<GroceryList> {
   }
 
   void _loadItem() async {
-    final url = Uri.https(
-        'app1-1fbc8-default-rtdb.firebaseio.com', 'shopping-list.json');
+    try {
+      final url = Uri.https(
+          'app1-1fbc8-default-rtdb.firebaseio.com', 'shopping-list.json');
 
-    final response = await http.get(url);
+      final response = await http.get(url);
 
-    if (response.statusCode >= 400) {
-      setState(() {
-        _error = 'Failed to load the  data. Please Try Again Later...';
-      });
-    }
-    final Map<String, dynamic> listData = json.decode(response.body);
+      if (response.statusCode >= 400) {
+        setState(() {
+          _error = 'Failed to load the  data. Please Try Again Later...';
+        });
+      }
+      final Map<String, dynamic> listData = json.decode(response.body);
 
-    final List<GroceryItem> _loadedItems = [];
-    for (final item in listData.entries) {
-      final category = categories.entries
-          .firstWhere(
-              (catItem) => catItem.value.title == item.value['category'])
-          .value;
-      _loadedItems.add(
-        GroceryItem(
-          id: item.key,
-          name: item.value['name'],
-          quantity: item.value['quantity'],
-          category: category,
-        ),
-      );
-      setState(() {
-        _groceryItems = _loadedItems;
-        _isLoading = false;
-      });
+      if (response.body == 'null') {
+        setState(() {
+          _isLoading = false;
+        });
+
+        return;
+      }
+
+      final List<GroceryItem> _loadedItems = [];
+      for (final item in listData.entries) {
+        final category = categories.entries
+            .firstWhere(
+                (catItem) => catItem.value.title == item.value['category'])
+            .value;
+        _loadedItems.add(
+          GroceryItem(
+            id: item.key,
+            name: item.value['name'],
+            quantity: item.value['quantity'],
+            category: category,
+          ),
+        );
+        setState(() {
+          _groceryItems = _loadedItems;
+          _isLoading = false;
+        });
+      }
+    } catch (erro) {
+      _error = 'Somethings Went Wrong! Please try Again later ';
     }
   }
 
