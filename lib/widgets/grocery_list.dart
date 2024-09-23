@@ -17,7 +17,7 @@ class GroceryList extends StatefulWidget {
 class _GroceryListState extends State<GroceryList> {
   List<GroceryItem> _groceryItems = [];
   var _isLoading = true;
-
+  String? _error;
   @override
   void initState() {
     // TODO: implement initState
@@ -30,6 +30,12 @@ class _GroceryListState extends State<GroceryList> {
         'app1-1fbc8-default-rtdb.firebaseio.com', 'shopping-list.json');
 
     final response = await http.get(url);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _error = 'Failed to load the  data. Please Try Again Later...';
+      });
+    }
     final Map<String, dynamic> listData = json.decode(response.body);
 
     final List<GroceryItem> _loadedItems = [];
@@ -66,10 +72,24 @@ class _GroceryListState extends State<GroceryList> {
     });
   }
 
-  void _removeItem(GroceryItem item) {
+  void _removeItem(GroceryItem item) async {
+    final index = _groceryItems.indexOf(item);
+
     setState(() {
       _groceryItems.remove(item);
     });
+
+    final url = Uri.https('app-1fbc8-default-rtdb.firebaseio.com',
+        'shopping-list/${item.id}.json');
+
+    // no need to  add await as item deleted on loacal directly as at line 83 so, in backend we don't have any time boundation
+    final response = await http.delete(url);
+
+    if (response.statusCode >= 400) {
+      setState(() {
+        _groceryItems.insert(index, item);
+      });
+    }
   }
 
   @override
@@ -103,6 +123,10 @@ class _GroceryListState extends State<GroceryList> {
           ),
         ),
       );
+    }
+
+    if (_error != null) {
+      content = Center(child: Text(_error!));
     }
     // TODO: implement build
     return Scaffold(
